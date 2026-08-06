@@ -1,0 +1,173 @@
+/* CourtCrews — gedeelde opmaak.
+   Bewust alleen systeemletters: een privacyverklaring die zelf een verzoek
+   naar een externe lettertypeserver doet, moet dat vervolgens ook weer
+   verantwoorden. Kleuren komen uit de app zelf. */
+
+:root {
+  --inkt: #1a1a1a;
+  --leisteen: #2c3e50;
+  --grijs: #6b7580;
+  --lijn: #e3e8ec;
+  --blauw: #0066cc;
+  --paneel: #f4f9ff;
+  --wit: #ffffff;
+  --rood: #cc0000;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--wit);
+  color: var(--inkt);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.wikkel {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 0 1.25rem 5rem;
+}
+
+/* Kop: de dubbele hairline verwijst naar de belijning van een padelbaan.
+   Eén motief, verder niets decoratiefs. */
+header.kop {
+  border-bottom: 1px solid var(--lijn);
+  margin-bottom: 2.5rem;
+  padding: 2.5rem 0 1.5rem;
+  position: relative;
+}
+header.kop::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 1px;
+  background: var(--lijn);
+}
+
+.merk {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--leisteen);
+  text-decoration: none;
+}
+.merk:hover { color: var(--blauw); }
+
+h1 {
+  font-size: clamp(1.6rem, 4.5vw, 2.1rem);
+  line-height: 1.2;
+  margin: 0.75rem 0 0.35rem;
+  color: var(--leisteen);
+  letter-spacing: -0.015em;
+}
+
+.ondertitel { margin: 0; color: var(--grijs); font-size: 0.95rem; }
+
+h2 {
+  font-size: 1.15rem;
+  margin: 2.75rem 0 0.6rem;
+  color: var(--leisteen);
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--lijn);
+  letter-spacing: -0.005em;
+}
+
+h3 { font-size: 1rem; margin: 1.6rem 0 0.4rem; color: var(--leisteen); }
+
+p, li { color: var(--inkt); }
+ul { padding-left: 1.15rem; }
+li { margin-bottom: 0.4rem; }
+
+a { color: var(--blauw); }
+a:focus-visible,
+.knop:focus-visible,
+.merk:focus-visible {
+  outline: 3px solid var(--blauw);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.taalkeuze {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.4rem;
+  font-size: 0.85rem;
+}
+.taalkeuze a {
+  text-decoration: none;
+  border: 1px solid var(--lijn);
+  border-radius: 999px;
+  padding: 0.25rem 0.8rem;
+  color: var(--leisteen);
+}
+.taalkeuze a:hover { border-color: var(--blauw); color: var(--blauw); }
+
+.paneel {
+  background: var(--paneel);
+  border: 1px solid #d6e4f0;
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+  margin: 1.5rem 0;
+}
+.paneel p:first-child { margin-top: 0; }
+.paneel p:last-child { margin-bottom: 0; }
+
+.let-op {
+  background: #fdf3e3;
+  border: 1px solid #e8c98a;
+  border-left: 4px solid #e08c00;
+  border-radius: 8px;
+  padding: 1rem 1.15rem;
+  margin: 1.5rem 0;
+  color: #7a4a00;
+}
+
+.knop {
+  display: inline-block;
+  background: var(--leisteen);
+  color: var(--wit);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.7rem 1.3rem;
+  border-radius: 8px;
+  margin-top: 0.6rem;
+}
+.knop:hover { background: #1f2d3a; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.2rem 0;
+  font-size: 0.95rem;
+}
+th, td {
+  text-align: left;
+  padding: 0.6rem 0.7rem 0.6rem 0;
+  border-bottom: 1px solid var(--lijn);
+  vertical-align: top;
+}
+th { color: var(--grijs); font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+footer.voet {
+  margin-top: 3.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--lijn);
+  color: var(--grijs);
+  font-size: 0.88rem;
+}
+
+.taal[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
