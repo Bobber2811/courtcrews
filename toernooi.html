@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toernooi — CourtCrews</title>
+<meta name="description" content="Open deze link met de CourtCrews-app om je in te schrijven voor een toernooi.">
+<link rel="stylesheet" href="stijl.css">
+<style>
+  /* De downloadknoppen naast de bestaande .knop: zelfde vorm, maar als
+     omlijning, zodat "Open in CourtCrews" de hoofdactie blijft voor wie de
+     app al heeft. */
+  .knoppen { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+  .knop-tweede {
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.75rem 1.1rem;
+    border-radius: 8px;
+    border: 2px solid var(--leisteen);
+    color: var(--leisteen);
+    background: var(--wit);
+  }
+  .knop-tweede:hover { border-color: var(--blauw); color: var(--blauw); }
+  .stap { margin: 0.35rem 0; }
+</style>
+</head>
+<body>
+<div class="wikkel">
+
+<header class="kop">
+  <a class="merk" href="index.html">CourtCrews</a>
+  <h1>Padeltoernooi</h1>
+  <nav class="taalkeuze" aria-label="Taal">
+    <a href="#nl">Nederlands</a>
+    <a href="#en">English</a>
+  </nav>
+</header>
+
+<!--
+  Toernooivariant van meedoen.html (2026-10-21). Twee soorten links:
+  ?code=XXXXXX is de deelnamelink van een toernooi, die de organisator deelt;
+  ?koppel=<uuid> is de partnerlink, die een speler na het inschrijven naar
+  zijn partner stuurt. Beide openen courtcrews://toernooi-meedoen in de app.
+
+  Waarom deze pagina bestaat: een link met het custom scheme courtcrews://
+  wordt door WhatsApp (en de meeste andere chatapps) NIET als klikbare link
+  herkend — alleen http(s)-links worden gelinkt. Deze https-pagina is dus de
+  daadwerkelijk gedeelde link; zij leest de code uit de query-string en
+  stuurt vanuit de browser door naar de app.
+
+  Wat er per toestel gebeurt (zelfde aanpak als meedoen.html, 2026-10-18):
+  - Android: een intent://-link. Staat de app erop, dan opent hij met de
+    token; staat hij er niet op, dan stuurt Android zelf door naar de Play
+    Store (S.browser_fallback_url). Geen foutmelding.
+  - iPhone: courtcrews://. Er is op iOS geen manier om vooraf te weten of
+    de app er staat; zonder app toont Safari kort "adres ongeldig". Blijft
+    deze pagina na 1,5 s zichtbaar, dan verschijnen de App Store-knop en de
+    knop om het opnieuw te proberen.
+  - Computer: niets openen, alleen beide winkels en de uitleg.
+
+  Wat een webpagina NIET kan: de token meegeven door de installatie heen.
+  Na het downloaden moet iemand dus nog een keer op de link tikken; dat
+  staat er daarom expliciet bij. (Echt oplossen kan met Universal Links /
+  App Links op courtcrews.com, maar dat vraagt een nieuwe app-build.)
+-->
+
+<main id="nl">
+  <p id="status-nl">Bezig met openen van de app…</p>
+
+  <div class="paneel" id="paneel-nl" hidden>
+    <p><strong>Nog geen CourtCrews?</strong></p>
+    <p class="stap">1. Download de app (gratis).</p>
+    <p class="stap">2. Kom terug naar je chat en tik <strong>nog een keer</strong>
+    op de link. Dan kom je meteen bij het toernooi.</p>
+    <div class="knoppen">
+      <a class="knop-tweede" id="ios-knop-nl"
+         href="https://apps.apple.com/nl/app/courtcrews/id6801520857">Download in de App Store</a>
+      <a class="knop-tweede" id="android-knop-nl"
+         href="https://play.google.com/store/apps/details?id=com.courtcrews.app">Download in Google Play</a>
+    </div>
+
+    <p id="al-app-nl" style="margin-top:1.5rem"><strong>Heb je de app al?</strong>
+    Tik dan op de knop hieronder. Opent er niets, open deze pagina dan eerst in
+    je gewone browser (vaak via het ⋮-menu rechtsboven, "Openen in browser").</p>
+    <a class="knop" id="open-knop-nl" href="#">Open in CourtCrews</a>
+  </div>
+
+  <div class="paneel" id="computer-nl" hidden>
+    <p>Open deze link op je <strong>telefoon</strong>: de uitnodiging werkt
+    alleen in de CourtCrews-app. Nog geen app? Download hem hier, en tik daarna
+    op je telefoon op de link.</p>
+    <div class="knoppen">
+      <a class="knop-tweede" href="https://apps.apple.com/nl/app/courtcrews/id6801520857">Download in de App Store</a>
+      <a class="knop-tweede" href="https://play.google.com/store/apps/details?id=com.courtcrews.app">Download in Google Play</a>
+    </div>
+  </div>
+
+  <p id="geen-token-nl" hidden>Deze link mist een geldige uitnodigingscode.
+  Vraag de organisator of je partner om een nieuwe link.</p>
+</main>
+
+<main id="en">
+  <h2>English version</h2>
+  <p id="status-en">Opening the app…</p>
+
+  <div class="paneel" id="paneel-en" hidden>
+    <p><strong>Don't have CourtCrews yet?</strong></p>
+    <p class="stap">1. Download the app (free).</p>
+    <p class="stap">2. Go back to your chat and tap the invite link
+    <strong>once more</strong>. You'll go straight to the tournament.</p>
+    <div class="knoppen">
+      <a class="knop-tweede" id="ios-knop-en"
+         href="https://apps.apple.com/app/courtcrews/id6801520857">Download on the App Store</a>
+      <a class="knop-tweede" id="android-knop-en"
+         href="https://play.google.com/store/apps/details?id=com.courtcrews.app">Get it on Google Play</a>
+    </div>
+
+    <p style="margin-top:1.5rem"><strong>Already have the app?</strong>
+    Tap the button below. If nothing happens, first open this page in your
+    regular browser (often via the ⋮ menu, top right, "Open in browser").</p>
+    <a class="knop" id="open-knop-en" href="#">Open in CourtCrews</a>
+  </div>
+
+  <div class="paneel" id="computer-en" hidden>
+    <p>Open this link on your <strong>phone</strong>: the invite only works in
+    the CourtCrews app. No app yet? Download it here, then tap the link
+    on your phone.</p>
+    <div class="knoppen">
+      <a class="knop-tweede" href="https://apps.apple.com/app/courtcrews/id6801520857">Download on the App Store</a>
+      <a class="knop-tweede" href="https://play.google.com/store/apps/details?id=com.courtcrews.app">Get it on Google Play</a>
+    </div>
+  </div>
+
+  <p id="geen-token-en" hidden>This link is missing a valid invite code.
+  Ask the organiser or your partner for a new link.</p>
+</main>
+
+<footer class="voet">
+  <p>CourtCrews — Tom Hoek ·
+  <a href="index.html">Home</a> ·
+  <a href="privacy.html">Privacyverklaring</a> ·
+  <a href="account-verwijderen.html">Account verwijderen</a></p>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var PLAY = 'https://play.google.com/store/apps/details?id=com.courtcrews.app';
+  var PAKKET = 'com.courtcrews.app';
+
+  var params = new URLSearchParams(window.location.search);
+  // ?code=XXXXXX  = deelnamelink van het toernooi
+  // ?koppel=<uuid> = partnerlink van een speler die zich al inschreef
+  var code = params.get('code');
+  var koppel = params.get('koppel');
+  var sleutel = code ? 'code' : (koppel ? 'koppel' : null);
+  var waarde = code || koppel;
+
+  function toon(id) { var el = document.getElementById(id); if (el) el.hidden = false; }
+  function verberg(id) { var el = document.getElementById(id); if (el) el.hidden = true; }
+
+  if (!sleutel) {
+    verberg('status-nl'); verberg('status-en');
+    toon('geen-token-nl'); toon('geen-token-en');
+    return;
+  }
+
+  var ua = navigator.userAgent || '';
+  var isAndroid = /android/i.test(ua);
+  // iPadOS meldt zich als Mac; een Mac met aanraakscherm is in de praktijk een iPad.
+  var isIOS = /iphone|ipad|ipod/i.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  var q = sleutel + '=' + encodeURIComponent(waarde);
+  // Zelfde scheme als in mobile/app.json ("scheme": "courtcrews"); de route is
+  // mobile/app/toernooi-meedoen.tsx (courtcrews://toernooi-meedoen?code=... of ?koppel=...).
+  var deepLink = 'courtcrews://toernooi-meedoen?' + q;
+  var intentLink = 'intent://toernooi-meedoen?' + q +
+    '#Intent;scheme=courtcrews;package=' + PAKKET +
+    ';S.browser_fallback_url=' + encodeURIComponent(PLAY) + ';end';
+
+  var openLink = isAndroid ? intentLink : deepLink;
+  document.getElementById('open-knop-nl').href = openLink;
+  document.getElementById('open-knop-en').href = openLink;
+
+  // Computer: niets proberen te openen, alleen uitleg + winkels.
+  if (!isAndroid && !isIOS) {
+    verberg('status-nl'); verberg('status-en');
+    toon('computer-nl'); toon('computer-en');
+    return;
+  }
+
+  // Alleen de winkel van dit toestel tonen.
+  if (isAndroid) { verberg('ios-knop-nl'); verberg('ios-knop-en'); }
+  if (isIOS) { verberg('android-knop-nl'); verberg('android-knop-en'); }
+
+  // Ging de app open, dan verdwijnt deze pagina naar de achtergrond. Dan
+  // hoeft het paneel niet te verschijnen als iemand later terugkomt.
+  var appGeopend = false;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) appGeopend = true;
+  });
+  window.addEventListener('pagehide', function () { appGeopend = true; });
+
+  window.location.href = openLink;
+
+  setTimeout(function () {
+    if (appGeopend) return;
+    verberg('status-nl'); verberg('status-en');
+    toon('paneel-nl'); toon('paneel-en');
+  }, 1500);
+})();
+</script>
+
+</body>
+</html>
