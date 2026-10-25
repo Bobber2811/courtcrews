@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doe mee met Neckslag — CourtCrews</title>
+<meta name="description" content="Doe mee met Neckslag, de open padelcompetitie in CourtCrews. Elke maand 3 à 4 wedstrijden op je eigen niveau.">
+<meta name="theme-color" content="#FBFAF8">
+<meta property="og:title" content="Doe mee met Neckslag">
+<meta property="og:description" content="De open padelcompetitie in CourtCrews. Elke maand 3 à 4 wedstrijden op je eigen niveau.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://courtcrews.com/neckslag">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  Waarom deze pagina bestaat (2026-10-25): de QR-code op de wervingsposter
+  wijst hierheen, naar een vaste korte URL. Op papier kun je niets meer
+  wijzigen; hier wel. Verloopt het token of wordt de WhatsApp-link
+  gereset, dan pas je alleen de twee constanten onderaan aan.
+
+  Anders dan meedoen.html opent deze pagina de app NIET automatisch. Wie
+  vanaf een poster scant, heeft de app meestal nog niet, en op een iPhone
+  geeft een automatische poging dan een foutmelding van Safari. Daarom drie
+  stappen die je zelf aantikt, in een vaste volgorde: eerst de app, dan de
+  competitie, en pas daarna WhatsApp. De app is de inschrijving; de groep
+  is voor de Tikkies van de baanhuur.
+
+  Het token hoort bij een vaste rij in registratie_links (competitie 22,
+  max. 500 aanmeldingen, geldig tot eind 2027), handmatig aangemaakt met
+  poster-neckslag-stap1-vaste-registratielink.sql. Een link uit de app
+  zelf verloopt na 2 dagen en is dus ongeschikt voor een poster.
+-->
+<style>
+  /* Kleuren en lettertypes uit download.html. */
+  :root {
+    --creme: #FBFAF8;
+    --marine: #2C3E50;
+    --marine-hover: #36495C;
+    --inkt: #1D2B36;
+    --gedempt: #4A5A66;
+    --zacht: #5B6B78;
+    --lijn: #E2E8ED;
+    --accent: #C2410C;
+    --whatsapp: #128C7E;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  /* .knop zet display: block, en dat wint anders van het hidden-attribuut. */
+  [hidden] { display: none !important; }
+
+  body {
+    margin: 0;
+    padding: 2rem 1.25rem 2.5rem;
+    background: var(--creme);
+    color: var(--inkt);
+    font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.5;
+  }
+
+  main { width: 100%; max-width: 32rem; margin: 0 auto; }
+
+  .merk {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin: 0 0 1.75rem;
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em;
+  }
+  .merk .stip { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--accent); }
+
+  .kop { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.75rem; }
+  h1 {
+    margin: 0 0 0.75rem;
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-size: clamp(2rem, 9vw, 3rem); font-weight: 800;
+    line-height: 1.02; letter-spacing: -0.035em;
+  }
+  .mascotte { flex: none; width: clamp(96px, 28vw, 132px); height: auto; }
+
+  .feiten { margin: 0 0 2rem; padding: 0; list-style: none; color: var(--gedempt); font-size: 1.075rem; }
+  .feiten li { padding: 0.4rem 0; border-top: 1px solid var(--lijn); }
+  .feiten li:last-child { border-bottom: 1px solid var(--lijn); }
+  .feiten strong { color: var(--inkt); }
+
+  ol.stappen { margin: 0 0 2.5rem; padding: 0; list-style: none; display: grid; gap: 1rem; }
+  .stap {
+    padding: 1.1rem 1.2rem 1.2rem;
+    border: 1px solid var(--lijn); border-radius: 1rem;
+    background: #fff;
+  }
+  .stap h2 {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin: 0 0 0.35rem;
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-size: 1.25rem; font-weight: 800; letter-spacing: -0.015em;
+  }
+  .nr {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 1.8rem; height: 1.8rem; border-radius: 50%;
+    background: var(--marine); color: #fff; font-size: 1rem;
+  }
+  .stap p { margin: 0 0 0.85rem; color: var(--gedempt); }
+  .stap p.klein { margin: 0.7rem 0 0; font-size: 0.95rem; color: var(--zacht); }
+
+  .knoppen { display: flex; flex-direction: column; gap: 0.6rem; }
+  .knop {
+    display: block; text-align: center; text-decoration: none;
+    padding: 0.85rem 1.1rem; border-radius: 0.8rem;
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-size: 1.1rem; font-weight: 700;
+    background: var(--marine); color: #fff;
+  }
+  .knop.whatsapp { background: var(--whatsapp); }
+  @media (hover: hover) {
+    .knop:hover { background: var(--marine-hover); }
+    .knop.whatsapp:hover { background: #0E7A6E; }
+  }
+  a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  .eigen {
+    margin: 0 0 2rem; padding: 1.1rem 1.2rem;
+    border-radius: 1rem; background: #EEF2F5; color: var(--gedempt);
+  }
+  .eigen strong { color: var(--inkt); }
+  .eigen a { color: var(--marine); font-weight: 700; text-underline-offset: 3px; }
+
+  footer {
+    padding-top: 1.25rem; border-top: 1px solid var(--lijn);
+    color: var(--zacht); font-size: 0.95rem;
+  }
+  footer p { margin: 0 0 0.5rem; }
+  footer a { color: var(--zacht); text-underline-offset: 3px; }
+  footer .links { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+</style>
+</head>
+<body>
+  <main>
+    <p class="merk"><span class="stip" aria-hidden="true"></span>CourtCrews</p>
+
+    <div class="kop">
+      <h1>Doe mee met Neckslag</h1>
+      <img class="mascotte" src="mascotte.png" width="694" height="654"
+           alt="De CourtCrews-mascotte zwaait met een padelracket">
+    </div>
+
+    <ul class="feiten">
+      <li><strong>Elke maand een nieuwe periode</strong>, met nieuwe tegenstanders.</li>
+      <li><strong>3 à 4 wedstrijden per maand</strong>, op je eigen niveau. Win je, dan stijg je een klasse.</li>
+      <li><strong>Jij kiest</strong>: meedoen of een maand overslaan. Dat zet je zelf in de app.</li>
+    </ul>
+
+    <ol class="stappen">
+      <li class="stap">
+        <h2><span class="nr">1</span>Download CourtCrews</h2>
+        <p>Gratis. Heb je de app al? Ga dan door naar stap 2.</p>
+        <div class="knoppen" id="winkels">
+          <a class="knop" id="ios" href="https://apps.apple.com/nl/app/courtcrews/id6801520857">Download voor iPhone</a>
+          <a class="knop" id="android" href="https://play.google.com/store/apps/details?id=com.courtcrews.app">Download voor Android</a>
+        </div>
+        <p class="klein">Kom na het installeren terug naar deze pagina, of scan de poster nog een keer.</p>
+      </li>
+
+      <li class="stap">
+        <h2><span class="nr">2</span>Meld je aan bij Neckslag</h2>
+        <p>De app opent bij Neckslag. Nieuw? Dan maak je eerst een account aan, en je zit er meteen in.</p>
+        <a class="knop" id="meedoen-knop" href="#">Open Neckslag in de app</a>
+        <p class="klein" id="meedoen-uitleg">Opent er niets? Open deze pagina dan in je gewone browser (vaak via het ⋮-menu: "Openen in browser").</p>
+        <p class="klein" id="computer-uitleg" hidden>Dit werkt alleen op je telefoon. Scan de QR-code op de poster met je telefoon.</p>
+      </li>
+
+      <li class="stap">
+        <h2><span class="nr">3</span>Kom in de WhatsApp-groep</h2>
+        <p>Daar regelen we de baanhuur via Tikkie. Doe dit pas als je in de app bij Neckslag zit.</p>
+        <a class="knop whatsapp" id="whatsapp-knop" href="#">Naar de WhatsApp-groep</a>
+      </li>
+    </ol>
+
+    <div class="eigen">
+      <strong>Liever met je eigen vriendengroep?</strong> In CourtCrews start je gratis je
+      eigen competitie, met klassen, promotie en degradatie.
+      <a href="download.html">Download de app</a> en kies "Maak nieuwe competitie".
+    </div>
+
+    <footer>
+      <p>Gemaakt door Tom Hoek, begonnen voor onze eigen padelgroep.</p>
+      <p>Vragen? <a href="mailto:tom.appstudio@gmail.com">tom.appstudio@gmail.com</a></p>
+      <p class="links">
+        <a href="https://courtcrews.com/privacy.html">Privacyverklaring</a>
+        <a href="https://courtcrews.com/account-verwijderen.html">Account verwijderen</a>
+      </p>
+    </footer>
+  </main>
+
+  <script>
+  (function () {
+    // De twee dingen die je hier ooit moet vervangen.
+    var TOKEN = '86630b1c-8a9f-4038-be11-df9e2f66c9d2';
+    var WHATSAPP = 'https://chat.whatsapp.com/Jf1Fg8fQiuJ3fFvGh41bVY';
+
+    var PLAY = 'https://play.google.com/store/apps/details?id=com.courtcrews.app';
+    var PAKKET = 'com.courtcrews.app';
+
+    var ua = navigator.userAgent || '';
+    var isAndroid = /android/i.test(ua);
+    // iPadOS meldt zich als Mac; een Mac met aanraakscherm is in de praktijk een iPad.
+    var isIOS = /iphone|ipad|ipod/i.test(ua) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // Zelfde links als meedoen.html: courtcrews:// op iPhone, intent:// op
+    // Android (zonder app stuurt Android zelf door naar de Play Store).
+    var t = encodeURIComponent(TOKEN);
+    var deepLink = 'courtcrews://registreren?token=' + t;
+    var intentLink = 'intent://registreren?token=' + t +
+      '#Intent;scheme=courtcrews;package=' + PAKKET +
+      ';S.browser_fallback_url=' + encodeURIComponent(PLAY) + ';end';
+
+    document.getElementById('meedoen-knop').href = isAndroid ? intentLink : deepLink;
+    document.getElementById('whatsapp-knop').href = WHATSAPP;
+
+    if (isAndroid) {
+      document.getElementById('ios').hidden = true;
+    } else if (isIOS) {
+      document.getElementById('android').hidden = true;
+    } else {
+      // Computer: de app openen kan niet, de winkels en WhatsApp wel.
+      document.getElementById('meedoen-knop').hidden = true;
+      document.getElementById('meedoen-uitleg').hidden = true;
+      document.getElementById('computer-uitleg').hidden = false;
+    }
+  })();
+  </script>
+</body>
+</html>
