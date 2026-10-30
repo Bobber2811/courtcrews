@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Toernooischerm — CourtCrews</title>
+<!--
+  Het grote scherm voor een toernooi (Tom 30-10): op een laptop of tv op de
+  club, zonder inloggen. Per baan wie er nu speelt en wie daarna, afgewisseld
+  met de stand per niveau of poule.
+
+  De link komt uit de app (Beheer > Groot scherm) en draagt een eigen
+  schermcode: scherm.html?code=XXXXXXXXXX. Met &omgeving=test praat de pagina
+  met de testdatabase in plaats van productie.
+
+  Gegevens: één RPC, toernooi_scherm(code), met de publieke anon-sleutel (die
+  zit ook in elke app-build). De RPC geeft alleen wat op een scherm in de
+  kantine hoort: afgekorte namen, banen, tijden, uitslagen en de stand. Alle
+  tekst uit de database gaat via esc() de pagina in.
+
+  Bewust zonder bibliotheken of externe lettertypes: een laptop op de club
+  moet het ook met een matige verbinding doen.
+-->
+<style>
+  :root {
+    --vlak: #0e151c;
+    --kaart: #18222d;
+    --kaart-licht: #1f2b38;
+    --lijn: #2a3846;
+    --tekst: #f3f6f9;
+    --zacht: #9aa8b6;
+    --blauw: #4d9fff;
+    /* Kleurvocabulaire van de app: amber = nu aan de beurt, groen = af. */
+    --amber: #e0a33a;
+    --amber-vlak: #3a2c12;
+    --groen: #3fbf74;
+    --groen-vlak: #13301f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--vlak);
+    color: var(--tekst);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    /* Alles schaalt mee met de breedte van het scherm: op een tv van 4 meter
+       afstand moet het even leesbaar zijn als op een laptop. */
+    font-size: clamp(14px, 1.15vw, 40px);
+    line-height: 1.3;
+    overflow: hidden;
+  }
+  .scherm { display: flex; flex-direction: column; height: 100vh; padding: 1.4em 1.8em 1.2em; gap: 1.1em; }
+
+  /* ---------- Kop ---------- */
+  .kop { display: flex; align-items: center; gap: 1.5em; }
+  .merk { font-size: 0.8em; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--blauw); }
+  .titel { flex: 1; min-width: 0; }
+  .titel h1 { margin: 0; font-size: 2em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .titel .sub { color: var(--zacht); font-size: 1em; margin-top: 0.2em; }
+  .rechts { text-align: right; }
+  .klok { font-size: 2.6em; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+  .voortgang { color: var(--zacht); margin-top: 0.3em; }
+
+  /* ---------- Banen ---------- */
+  .weergave { flex: 1; min-height: 0; display: none; }
+  .weergave.actief { display: flex; flex-direction: column; }
+  .raster { flex: 1; min-height: 0; display: grid; gap: 1em; }
+  .vak { min-height: 0; }
+  .baan {
+    height: 100%;
+    background: var(--kaart);
+    border: 2px solid var(--lijn);
+    border-radius: 0.8em;
+    padding: 0.9em 1.1em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6em;
+    overflow: hidden;
+  }
+  .baan.main { border-color: var(--blauw); }
+  .baan-kop { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6em; }
+  .baan-naam { font-size: 1.5em; font-weight: 800; }
+  .baan-naam .ster { color: var(--blauw); }
+  .label { font-size: 0.75em; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--zacht); }
+  .nu { background: var(--kaart-licht); border-radius: 0.6em; padding: 0.7em 0.85em; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.25em; }
+  .nu.speelt { background: var(--amber-vlak); border: 1px solid var(--amber); }
+  .nu.speelt .label { color: var(--amber); }
+  .nu.af { background: var(--groen-vlak); border: 1px solid var(--groen); }
+  .nu.af .label { color: var(--groen); }
+  .tijd { font-variant-numeric: tabular-nums; color: var(--zacht); font-weight: 600; }
+  .koppel { font-size: 1.35em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tegen { color: var(--zacht); font-size: 0.85em; font-weight: 700; font-style: italic; }
+  .score { font-size: 1.2em; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--groen); }
+  .soort { color: var(--zacht); font-size: 0.9em; }
+  .leeg { color: var(--zacht); font-style: italic; }
+  .daarna { display: flex; flex-direction: column; gap: 0.15em; }
+  .daarna .regel { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- Stand ---------- */
+  .groepen { flex: 1; min-height: 0; display: grid; gap: 1.2em; grid-auto-flow: column; grid-auto-columns: 1fr; }
+  .groep { background: var(--kaart); border-radius: 0.8em; padding: 1em 1.2em; overflow: hidden; }
+  .groep h2 { margin: 0 0 0.5em; font-size: 1.5em; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { text-align: right; font-size: 0.75em; letter-spacing: 0.1em; text-transform: uppercase; color: var(--zacht); font-weight: 800; padding: 0 0.4em 0.4em; }
+  th.naam, td.naam { text-align: left; }
+  td { text-align: right; padding: 0.45em 0.4em; border-top: 1px solid var(--lijn); font-size: 1.1em; }
+  td.rang { text-align: left; font-weight: 800; width: 2.2em; color: var(--zacht); }
+  td.naam { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0; width: 60%; }
+  td.punten { font-weight: 800; }
+  tr.eerste td.rang { color: var(--amber); }
+  .badge { font-size: 0.8em; color: var(--zacht); font-weight: 600; margin-left: 0.4em; }
+
+  /* ---------- Voet en meldingen ---------- */
+  .voet { display: flex; align-items: center; justify-content: space-between; color: var(--zacht); font-size: 0.85em; }
+  .stippen { display: flex; gap: 0.5em; }
+  .stip { width: 0.6em; height: 0.6em; border-radius: 50%; background: var(--lijn); }
+  .stip.aan { background: var(--blauw); }
+  .storing { color: var(--amber); }
+  .midden { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0.6em; }
+  .midden h2 { margin: 0; font-size: 2em; }
+  .midden p { margin: 0; color: var(--zacht); font-size: 1.2em; max-width: 40em; }
+  button.vol {
+    background: none; border: 1px solid var(--lijn); color: var(--zacht); border-radius: 0.4em;
+    padding: 0.3em 0.8em; font: inherit; cursor: pointer;
+  }
+  button.vol:hover { border-color: var(--blauw); color: var(--tekst); }
+  :fullscreen button.vol { display: none; }
+</style>
+</head>
+<body>
+<div class="scherm">
+  <header class="kop">
+    <div class="merk">CourtCrews</div>
+    <div class="titel">
+      <h1 id="naam">Toernooi</h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="rechts">
+      <div class="klok" id="klok">--:--</div>
+      <div class="voortgang" id="voortgang"></div>
+    </div>
+  </header>
+
+  <section class="weergave" id="banen"><div class="raster" id="raster"></div></section>
+  <section class="weergave" id="stand"><div class="groepen" id="groepen"></div></section>
+  <section class="weergave" id="melding"><div class="midden" id="meldingtekst"></div></section>
+
+  <footer class="voet">
+    <div class="stippen" id="stippen"></div>
+    <div id="status"></div>
+    <button class="vol" id="vol" type="button">Volledig scherm</button>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Publieke anon-sleutels (ook in elke app-build). Met &omgeving=test de
+  // testdatabase; anders productie.
+  var OMGEVINGEN = {
+    productie: { url: 'https://bwtjlapjmywukmibymod.supabase.co', sleutel: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3dGpsYXBqbXl3dWttaWJ5bW9kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTg4OTQsImV4cCI6MjA5OTUzNDg5NH0.eRg6x5utOVDPOw6tPBOR-zi9mE4--D3W7QSuoBPUzh4' },
+    test: { url: 'https://yymkvgvpxxwfstqgjqfe.supabase.co', sleutel: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5bWt2Z3ZweHh3ZnN0cWdqcWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1MTE4NzQsImV4cCI6MjEwODA4Nzg3NH0.8Lc4sEuQTK91XPNDCnDXJ39qlXIHqHjhXiqZ3-tc0gU' }
+  };
+  var VERVERS_MS = 15000;   // nieuwe gegevens
+  var BANEN_MS = 25000;     // zo lang staan de banen in beeld
+  var STAND_MS = 12000;     // zo lang de stand
+
+  var params = new URLSearchParams(location.search);
+  var code = (params.get('code') || '').trim().toUpperCase();
+  var omgeving = OMGEVINGEN[params.get('omgeving') === 'test' ? 'test' : 'productie'];
+
+  var data = null;          // laatste antwoord van toernooi_scherm
+  var verschil = 0;         // servertijd min de klok van deze laptop
+  var weergave = null;      // 'banen', 'stand' of 'melding'
+  var wisselTimer = null;
+  var fouten = 0;
+
+  var NIVEAUS = { upper: 'Upper', middle: 'Middle', lower: 'Lower', alle: 'Ladder' };
+  var DAGEN = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+  var MAANDEN = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function nu() { return Date.now() + verschil; }
+  function twee(n) { return (n < 10 ? '0' : '') + n; }
+  function klok(ms) { var d = new Date(ms); return twee(d.getHours()) + ':' + twee(d.getMinutes()); }
+  function zelfdeDag(a, b) { var x = new Date(a), y = new Date(b); return x.toDateString() === y.toDateString(); }
+  function dagTekst(ms) { var d = new Date(ms); return DAGEN[d.getDay()] + ' ' + d.getDate() + ' ' + MAANDEN[d.getMonth()]; }
+  function start(w) { return w.gepland_om ? new Date(w.gepland_om).getTime() : null; }
+
+  // ---------- Ophalen ----------
+  function haal() {
+    if (!code) { toonMelding('Geen schermcode', 'Open dit scherm met de link uit de app: Beheer › Groot scherm.'); return; }
+    fetch(omgeving.url + '/rest/v1/rpc/toernooi_scherm', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: omgeving.sleutel,
+        Authorization: 'Bearer ' + omgeving.sleutel
+      },
+      body: JSON.stringify({ p_code: code }),
+      cache: 'no-store'
+    })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (antwoord) {
+        fouten = 0;
+        if (!antwoord) {
+          data = null;
+          toonMelding('Deze link werkt niet (meer)', 'De organisator heeft misschien een nieuwe link gemaakt. Open de nieuwe link uit de app: Beheer › Groot scherm.');
+          return;
+        }
+        data = antwoord;
+        // De klok van een laptop op de club loopt nogal eens mis; de
+        // servertijd bepaalt wat "nu" is.
+        verschil = new Date(data.nu).getTime() - Date.now();
+        teken();
+      })
+      .catch(function () {
+        fouten++;
+        // De laatste gegevens blijven staan; alleen een melding onderin.
+        $('status').innerHTML = '<span class="storing">Geen verbinding, opnieuw proberen…</span>';
+        if (!data && fouten > 1) toonMelding('Geen verbinding', 'Controleer de internetverbinding van dit scherm. Het probeert het vanzelf opnieuw.');
+      });
+  }
+
+  // ---------- Hulpjes voor de inhoud ----------
+  function koppelNaam(id) {
+    if (id == null) return null;
+    var k = data.koppels.find(function (x) { return x.id === id; });
+    return k ? k.naam : null;
+  }
+  function rondesKnockout() {
+    return Math.max.apply(null, [0].concat(data.wedstrijden.filter(function (w) { return w.fase === 'knockout'; }).map(function (w) { return w.ronde; })));
+  }
+  function groepNaam(naam) { return NIVEAUS[naam] || naam; }
+  function soortLabel(w) {
+    var ladder = data.toernooi.format === 'competitie';
+    if (ladder) return w.fase === 'knockout' ? 'Slotronde · ' + groepNaam(w.groep) : groepNaam(w.groep);
+    if (w.fase === 'poule') return 'Poule ' + w.groep;
+    var afstand = rondesKnockout() - w.ronde;
+    return ['Finale', 'Halve finale', 'Kwartfinale', 'Achtste finale'][afstand] || 'Ronde ' + w.ronde;
+  }
+  function speeltijd(w) {
+    var s = start(w);
+    if (s == null) return '';
+    var eind = s + (data.toernooi.slot_minuten - data.toernooi.wissel_minuten) * 60000;
+    return klok(s) + '–' + klok(eind);
+  }
+  function score(w) {
+    if (w.status === 'walkover') return 'Walk-over';
+    return w.sets.filter(function (s) { return s[0] != null && s[1] != null; }).map(function (s) { return s[0] + '-' + s[1]; }).join('  ');
+  }
+  function koppelsHtml(w) {
+    var a = koppelNaam(w.koppel_1), b = koppelNaam(w.koppel_2);
+    var winnaar = w.winnaar_koppel;
+    function een(naam, id) {
+      var tekst = naam ? esc(naam) : '<span class="leeg">Nog te bepalen</span>';
+      return '<div class="koppel">' + (winnaar != null && winnaar === id ? '✓ ' : '') + tekst + '</div>';
+    }
+    return een(a, w.koppel_1) + '<div class="tegen">tegen</div>' + een(b, w.koppel_2);
+  }
+
+  // Dezelfde keuze als het banenbord in de app (wedstrijdOp): wat er op dit
+  // moment volgens het schema op de baan staat, een walk-over alleen als er
+  // niets anders is.
+  function wedstrijdNu(baanId, t) {
+    var slot = data.toernooi.slot_minuten * 60000;
+    var lopend = data.wedstrijden.filter(function (w) {
+      var s = start(w);
+      return w.baan_id === baanId && s != null && s <= t && t < s + slot;
+    });
+    return lopend.find(function (w) { return w.status !== 'walkover'; }) || lopend[0] || null;
+  }
+  function wedstrijdDaarna(baanId, na) {
+    return data.wedstrijden.find(function (w) {
+      var s = start(w);
+      return w.baan_id === baanId && s != null && s > na && w.status !== 'walkover';
+    }) || null;
+  }
+
+  // De plek van elke baan zoals de organisator ze heeft ingedeeld
+  // (plekkenVan in de app); banen zonder plek vullen de eerste vrije vakjes.
+  function plekken(banen) {
+    var geplaatst = banen.filter(function (b) { return b.rij != null && b.kolom != null; });
+    var breed = geplaatst.length > 0
+      ? Math.max.apply(null, geplaatst.map(function (b) { return b.kolom; })) + 1
+      : Math.min(3, Math.max(1, banen.length));
+    var plek = {}, bezet = {};
+    geplaatst.forEach(function (b) {
+      if (b.kolom < breed) { plek[b.id] = { rij: b.rij, kolom: b.kolom }; bezet[b.rij + ',' + b.kolom] = true; }
+    });
+    var vrij = 0;
+    banen.slice().sort(function (a, c) { return a.volgorde - c.volgorde; }).forEach(function (b) {
+      if (plek[b.id]) return;
+      while (bezet[Math.floor(vrij / breed) + ',' + (vrij % breed)]) vrij++;
+      plek[b.id] = { rij: Math.floor(vrij / breed), kolom: vrij % breed };
+      bezet[plek[b.id].rij + ',' + plek[b.id].kolom] = true;
+    });
+    var rijen = 0;
+    Object.keys(plek).forEach(function (id) { rijen = Math.max(rijen, plek[id].rij + 1); });
+    return { plek: plek, kolommen: breed, rijen: rijen };
+  }
+
+  // ---------- Tekenen ----------
+  function teken() {
+    var t = data.toernooi;
+    $('naam').textContent = t.naam;
+    var dag = data.dag ? dagTekst(new Date(data.dag.datum + 'T12:00:00').getTime()) + ' · ' + data.dag.starttijd.slice(0, 5) + '–' + data.dag.eindtijd.slice(0, 5) : '';
+    $('sub').textContent = [t.clubnaam, t.locatie, dag].filter(Boolean).join(' · ');
+    var totaal = data.wedstrijden.length;
+    var binnen = data.wedstrijden.filter(function (w) { return w.status === 'bevestigd' || w.status === 'walkover'; }).length;
+    $('voortgang').textContent = t.status === 'bezig' || t.status === 'afgerond' ? binnen + ' van ' + totaal + ' uitslagen binnen' : '';
+    $('status').textContent = 'Ververst om ' + klok(nu());
+
+    if (data.banen.length === 0 || data.wedstrijden.length === 0) {
+      toonMelding(t.status === 'afgerond' ? 'Het toernooi is afgelopen' : 'Het schema volgt',
+        t.status === 'inschrijving' ? 'De inschrijving loopt nog. Zodra het schema klaar is, staan hier de banen.' : 'Zodra de organisator het schema heeft gemaakt, staan hier de banen.');
+      return;
+    }
+    tekenBanen();
+    tekenStand();
+    // Eerste keer, of na een melding: met de banen beginnen. Anders loopt
+    // de wissel gewoon door.
+    if (weergave !== 'banen' && weergave !== 'stand') wissel('banen');
+    else zetStippen();
+  }
+
+  function tekenBanen() {
+    var t = nu();
+    var p = plekken(data.banen);
+    var raster = $('raster');
+    raster.style.gridTemplateColumns = 'repeat(' + p.kolommen + ', 1fr)';
+    raster.style.gridTemplateRows = 'repeat(' + p.rijen + ', 1fr)';
+    var opPlek = {};
+    data.banen.forEach(function (b) { var x = p.plek[b.id]; opPlek[x.rij + ',' + x.kolom] = b; });
+    var html = '';
+    for (var r = 0; r < p.rijen; r++) {
+      for (var k = 0; k < p.kolommen; k++) {
+        var b = opPlek[r + ',' + k];
+        html += '<div class="vak">' + (b ? baanHtml(b, t) : '') + '</div>';
+      }
+    }
+    raster.innerHTML = html;
+  }
+
+  function baanHtml(b, t) {
+    var w = wedstrijdNu(b.id, t);
+    var volgende = wedstrijdDaarna(b.id, w ? start(w) : t);
+    var nuHtml;
+    if (w) {
+      var af = w.status === 'bevestigd' || w.status === 'walkover';
+      var uitslag = w.status !== 'gepland' ? score(w) : '';
+      nuHtml = '<div class="nu ' + (af ? 'af' : 'speelt') + '">' +
+        '<div class="label">' + (af ? 'Gespeeld' : w.status === 'ingevoerd' ? 'Uitslag ingevoerd' : 'Nu') + ' · <span class="tijd">' + speeltijd(w) + '</span></div>' +
+        koppelsHtml(w) +
+        (uitslag ? '<div class="score">' + esc(uitslag) + '</div>' : '') +
+        '<div class="soort">' + esc(soortLabel(w)) + '</div>' +
+        '</div>';
+    } else {
+      nuHtml = '<div class="nu"><div class="label">Nu</div><div class="leeg">Vrij</div></div>';
+    }
+    var daarnaHtml = '<div class="daarna"><div class="label">Daarna</div>';
+    if (volgende) {
+      var s = start(volgende);
+      var wanneer = (zelfdeDag(s, t) ? '' : dagTekst(s) + ' ') + speeltijd(volgende);
+      var a = koppelNaam(volgende.koppel_1) || 'Nog te bepalen';
+      var c = koppelNaam(volgende.koppel_2) || 'Nog te bepalen';
+      daarnaHtml += '<div class="regel"><span class="tijd">' + esc(wanneer) + '</span> · ' + esc(soortLabel(volgende)) + '</div>' +
+        '<div class="regel"><strong>' + esc(a) + '</strong> <span class="tegen">tegen</span> <strong>' + esc(c) + '</strong></div>';
+    } else {
+      daarnaHtml += '<div class="leeg">Geen wedstrijden meer</div>';
+    }
+    daarnaHtml += '</div>';
+    return '<div class="baan' + (b.is_maincourt ? ' main' : '') + '">' +
+      '<div class="baan-kop"><div class="baan-naam">' + esc(b.naam) + (b.is_maincourt ? ' <span class="ster">★</span>' : '') + '</div></div>' +
+      nuHtml + daarnaHtml + '</div>';
+  }
+
+  function tekenStand() {
+    var ladder = data.toernooi.format === 'competitie';
+    var html = data.stand.map(function (g) {
+      var titel = ladder ? groepNaam(g.groep) : 'Poule ' + g.groep;
+      var rijen = g.rijen.map(function (r) {
+        return '<tr' + (r.rang === 1 && r.gespeeld > 0 ? ' class="eerste"' : '') + '>' +
+          '<td class="rang">' + r.rang + '</td>' +
+          '<td class="naam">' + esc(koppelNaam(r.koppel_id) || '') + (r.badge ? '<span class="badge">' + esc(r.badge) + '</span>' : '') + '</td>' +
+          '<td>' + r.gespeeld + '</td><td>' + r.winst + '</td><td>' + r.verlies + '</td>' +
+          '<td class="punten">' + (ladder ? r.punten : r.winst) + '</td></tr>';
+      }).join('');
+      return '<div class="groep"><h2>' + esc(titel) + '</h2><table>' +
+        '<thead><tr><th></th><th class="naam">Koppel</th><th>Gesp.</th><th>W</th><th>V</th><th>' + (ladder ? 'Pnt' : 'Winst') + '</th></tr></thead>' +
+        '<tbody>' + rijen + '</tbody></table></div>';
+    }).join('');
+    $('groepen').innerHTML = html;
+  }
+
+  function toonMelding(titel, tekst) {
+    $('meldingtekst').innerHTML = '<h2>' + esc(titel) + '</h2><p>' + esc(tekst) + '</p>';
+    zet('melding');
+  }
+
+  // ---------- Wisselen tussen banen en stand ----------
+  function heeftStand() { return data && data.stand.some(function (g) { return g.rijen.length > 0; }); }
+  function zet(naam) {
+    weergave = naam;
+    ['banen', 'stand', 'melding'].forEach(function (n) { $(n).classList.toggle('actief', n === naam); });
+    zetStippen();
+  }
+  function zetStippen() {
+    var aantal = weergave === 'melding' ? 0 : heeftStand() ? 2 : 1;
+    var html = '';
+    for (var i = 0; i < aantal; i++) html += '<div class="stip' + ((i === 0) === (weergave === 'banen') ? ' aan' : '') + '"></div>';
+    $('stippen').innerHTML = html;
+  }
+  function wissel(naam) {
+    clearTimeout(wisselTimer);
+    zet(naam);
+    if (naam === 'banen') wisselTimer = setTimeout(function () { wissel(heeftStand() ? 'stand' : 'banen'); }, BANEN_MS);
+    else if (naam === 'stand') wisselTimer = setTimeout(function () { wissel('banen'); }, STAND_MS);
+  }
+
+  // ---------- Klok, volledig scherm, wakker blijven ----------
+  function tik() { $('klok').textContent = klok(nu()); }
+  setInterval(tik, 1000);
+  tik();
+
+  $('vol').addEventListener('click', function () {
+    if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  });
+
+  // Een laptop die in slaap valt, toont niets meer. Waar de browser het
+  // kent, houden we het scherm wakker; na terugkomen opnieuw aanvragen.
+  var slot = null;
+  function wakker() {
+    if (!('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+    navigator.wakeLock.request('screen').then(function (s) { slot = s; }).catch(function () {});
+  }
+  document.addEventListener('visibilitychange', function () { if (!slot || slot.released) wakker(); });
+  wakker();
+
+  haal();
+  setInterval(haal, VERVERS_MS);
+})();
+</script>
+</body>
+</html>
